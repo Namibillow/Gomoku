@@ -3,7 +3,8 @@ import numpy as np
 import math
 from random import randint 
 
-import Gomoku_Eval_Func as AI
+# import Eval_Func as AI
+import best_move as BM 
  
 ###	Gomoku utilizing Monte Carlo Tree Search (MCTS) + Alpha Beta Pruning
 ### 盤面サイズ 19 * 19
@@ -52,10 +53,13 @@ class Gomoku():
 		### 1 = black win  2 = white win
 		self.result = 0
 
-		# self.player_pos = []
-		# self.AI_pos = []
+		##########
+		self.board = BM.Board()
+		# self.board.printBoard()
 
-		### メニュー
+		##########
+
+	### メニュー Menu 
 	def create_menu(self):
 		self.menubar = Menu(self.root)
 		self.subMenu = Menu(self.menubar, tearoff=0)
@@ -69,7 +73,7 @@ class Gomoku():
 		self.root.config(menu=self.menubar)
 	
 
-	### 盤面初期化
+	### 盤面初期化 initializing the game board 
 	def initBoard(self, player_one, player_two):
 		self.setPlayer(player_one, player_two)
 
@@ -79,11 +83,14 @@ class Gomoku():
 		self.init_board_points()
 		self.init_board_canvas()
 
+
 		if self.player_one == "player":
 			self.canvas.bind("<Button-1>", self.gameLoop)
 
 		elif self.player_one == "computer":
-			self.gameLoop2()
+			self.canvas.bind("<Button-1>", self.gameLoop2)
+			self.first_time_clicked = True
+			# self.gameLoop2()
 		
 		
 
@@ -238,11 +245,11 @@ class Gomoku():
 
 	### Player1 = self, Player2 = computer 
 	def gameLoop(self,event):
-		### プレーヤーのどちらかが勝つまで
-		
+
 		self.turn = 1
 
 		### Place stone #############################
+		### FIX ME TO NOT LET CLICK THE SAME PLACE #################
 		for i in range(ROWS): 
 			for j in range(COLS): 
 				pixel_x = (i + 1) * 40
@@ -259,11 +266,15 @@ class Gomoku():
 					# Place a black stone after determining the position
 					self.board_points[i][j] = 1
 					# print(i,j)
-					break
 
+					self.board.placeEnemy(i,j)
+					self.board.printBoard()
+					break
 			else:
-					continue
+				continue
+
 			break
+			
 
 		### Every time after one move, check the board
 		self.result = self.check_result()
@@ -287,13 +298,14 @@ class Gomoku():
 			self.firstmove()
 			self.white_turn = 1
 
-		else:
-			pass
-			# row, col = self.ef.search(self.turn self.depth)	
-			# self.board_points[row][col] = 2			
-			# self.draw_stone(row,col)
-		##########################################
 
+		else:
+			row, col = self.board.bestMove()	
+			self.board_points[row][col] = 2			
+			self.draw_stone(row,col)
+			self.board.placeSelf(row,col)
+		##########################################
+		self.board.printBoard()
 	
 		### Every time after one move, check the board
 		self.result = self.check_result()
@@ -322,49 +334,29 @@ class Gomoku():
 			if self.board_points[middleRow][middleCol] == 0:
 				self.draw_stone(middleRow,middleCol)
 				#self.AI_pos.append((middleRow,middleCol))
-				self.board_points[middleRow][middleCol] = 2
+				self.board.placeSelf(middleRow,middleCol)
+
+				if self.player_one == "player":
+					self.board_points[middleRow][middleCol] = 2
+				else:
+					self.board_points[middleRow][middleCol] = 1
 				return 
 		
 
-				### FIX ME 
 	### Player1 = Computer, Player2 = self
-	def gameLoop2(self,*args):
-		while True:
-			### AI first 
-			self.turn = 2 
+	def gameLoop2(self,event):
+		self.turn = 2
 
-			if self.white_turn == 0:
-				self.firstmove()
-				self.white_turn = 1
-			else:
-				pass
-				#### AI's turn
-				##########################
-
-			### Every time after one move, check the board
-			self.result = self.check_result()
-
-			### Black wins 
-			if self.result == 2:
-				self.canvas.create_text(400,20, font=("Purisa", 25), text="Black Wins")
-				self.canvas.unbind('<Button-1>')
-				return 0
-
-			### Check if the game is tie
-			elif self.check_tie() == False:
-				self.canvas.create_text(400,20, font=("Purisa", 25), text="GAME TIE")
-				self.canvas.unbind('<Button-1>')
-				return 0
-
-			self.canvas.bind("<Button-1>",self.gameLoop2)
-
-			self.turn = 1
-
-			### Place stone #############################
+		if self.first_time_clicked == True:
+			self.first_time_clicked = False
+			pass
+		else:
+		### Place stone #################################
 			for i in range(ROWS): 
 				for j in range(COLS): 
 					pixel_x = (i + 1) * 40
 					pixel_y = (j + 1) * 40
+
 					square_distance = math.pow((event.x - pixel_x), 2) + math.pow((event.y - pixel_y), 2)
 					square_distance = math.sqrt(square_distance)
 
@@ -373,15 +365,67 @@ class Gomoku():
 						# unbind to ensure the user cannot click anywhere until the program
 						# has placed a white stone already
 						self.canvas.unbind("<Button-1>")
+						self.board.placeEnemy(i,j)
 						# Place a black stone after determining the position
-						self.board_points[i][j] = 1
+						self.board_points[i][j] = 2
 						# print(i,j)
 						break
 
 				else:
 						continue
 				break
+	
+			self.board.printBoard()
 		
+			### Every time after one move, check the board
+			self.result = self.check_result()
+
+			### White wins 
+			if self.result == 2:
+				self.canvas.create_text(400,20, font=("Purisa", 25), text="White Wins")
+				self.canvas.unbind('<Button-1>')
+				return 0
+
+			elif self.check_tie() == False:
+				self.canvas.create_text(400,20, font=("Purisa", 25), text="GAME TIE")
+				self.canvas.unbind('<Button-1>')
+				return 0
+
+			
+		### AI first 
+		self.turn = 1 
+
+		if self.white_turn == 0:
+			self.firstmove()
+			self.white_turn = 1
+		else:
+			row, col = self.board.bestMove()
+			self.board_points[row][col] = 1		
+			self.draw_stone(row,col)
+			self.board.placeSelf(row,col)
+
+			#### AI's turn
+			##########################
+
+		### Every time after one move, check the board
+		self.result = self.check_result()
+
+		### Black wins 
+		if self.result == 1:
+			self.canvas.create_text(400,20, font=("Purisa", 25), text="Black Wins")
+			self.canvas.unbind('<Button-1>')
+			return 0
+
+		### Check if the game is tie
+		elif self.check_tie() == False:
+			self.canvas.create_text(400,20, font=("Purisa", 25), text="GAME TIE")
+			self.canvas.unbind('<Button-1>')
+			return 0
+
+		self.canvas.bind("<Button-1>",self.gameLoop2)
+		
+
+
 
 
 if __name__ == "__main__":
