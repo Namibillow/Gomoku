@@ -300,7 +300,7 @@ class Gomoku():
 
 
 		else:
-			row, col = self.board.bestMove()	
+			row, col = self.board.newBestMove()	
 			self.board_points[row][col] = 2			
 			self.draw_stone(row,col)
 			self.board.placeSelf(row,col)
@@ -399,7 +399,7 @@ class Gomoku():
 			self.firstmove()
 			self.white_turn = 1
 		else:
-			row, col = self.board.bestMove()
+			row, col = self.board.newBestMove()
 			self.board_points[row][col] = 1		
 			self.draw_stone(row,col)
 			self.board.placeSelf(row,col)
