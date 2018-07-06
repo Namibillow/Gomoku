@@ -2,6 +2,7 @@ from tkinter import *
 import numpy as np 
 import math
 from random import randint 
+import time
 
 # import Eval_Func as AI
 import best_move as BM 
@@ -49,6 +50,8 @@ class Gomoku():
 		self.create_menu()
 
 		self.white_turn = 0 
+		self.blacks_turn = 0
+
 
 		### 1 = black win  2 = white win
 		self.result = 0
@@ -66,6 +69,7 @@ class Gomoku():
 		self.menubar.add_cascade(label='New Game', menu=self.subMenu)
 		self.subMenu.add_command(label="Play First", command= lambda: self.initBoard('player', 'computer'))
 		self.subMenu.add_command(label="Play Second", command= lambda: self.initBoard('computer', 'player'))
+		self.subMenu.add_command(label="AI vs AI", command= lambda: self.initBoard('computer', 'computer'))
 		self.subMenu.add_separator()
 		self.subMenu.add_command(label="Exit", command=self.root.quit)
 	
@@ -87,12 +91,16 @@ class Gomoku():
 		if self.player_one == "player":
 			self.canvas.bind("<Button-1>", self.gameLoop)
 
+		elif self.player_one == "computer" and self.player_two == "computer":
+			self.canvas.bind("<Button-1>", self.gameLoop3)
+
 		elif self.player_one == "computer":
 			self.canvas.bind("<Button-1>", self.gameLoop2)
 			self.first_time_clicked = True
 			# self.gameLoop2()
+
 		
-		
+			
 
 	### プレイヤーの設定: {player|computer : BLACK|WHITE}
 	def setPlayer(self, p1, p2):
@@ -243,38 +251,123 @@ class Gomoku():
 		### Returns True if there is 0
 		return any(0 in x for x in self.board_points)
 
+	def gameLoop3(self,event):
+		print("Called")
+
+		### AI first 
+
+		self.turn = 1 
+
+		if self.blacks_turn == 0:
+			while True:
+				middleRow = randint(8,11)
+				middleCol = randint(8,11)
+				if self.board_points[middleRow][middleCol] == 0:
+					self.draw_stone(middleRow,middleCol)
+					#self.AI_pos.append((middleRow,middleCol))
+					self.board.placeEnemy(middleRow,middleCol)
+
+					if self.player_one == "player":
+						self.board_points[middleRow][middleCol] = 2
+					else:
+						self.board_points[middleRow][middleCol] = 1
+					break 
+			self.blacks_turn = 1
+		else:
+			row, col = self.board.newBestMove()	
+			self.board_points[row][col] = 1		
+			self.draw_stone(row,col)
+			self.board.placeEnemy(row,col)
+
+			#### AI's turn
+			##########################
+
+		### Every time after one move, check the board
+		self.result = self.check_result()
+		
+
+		### Black wins 
+		if self.result == 1:
+			self.canvas.create_text(400,20, font=("Purisa", 25), text="Black Wins")
+			
+			return 0
+
+		### Check if the game is tie
+		elif self.check_tie() == False:
+			self.canvas.create_text(400,20, font=("Purisa", 25), text="GAME TIE")
+			
+			return 0
+
+		self.turn = 2
+
+		### For the AI's first turn, it must place stone in the middle 3 * 3 range
+		if self.white_turn == 0:
+			self.firstmove()
+			self.white_turn = 1
+
+		else:
+			row, col = self.board.newBestMove()	
+			self.board_points[row][col] = 2			
+			self.draw_stone(row,col)
+			self.board.placeSelf(row,col)
+		##########################################
+		# self.board.printBoard()
+	
+		### Every time after one move, check the board
+		self.result = self.check_result()
+
+		### White wins 
+		if self.result == 2:
+			self.canvas.create_text(400,20, font=("Purisa", 25), text="White Wins")
+			self.canvas.unbind('<Button-1>')
+			return 0
+
+		elif self.check_tie() == False:
+			self.canvas.create_text(400,20, font=("Purisa", 25), text="GAME TIE")
+			self.canvas.unbind('<Button-1>')
+			return 0
+		
+		#self.canvas.bind("<Button-1>",self.gameLoop3)
+
+
 	### Player1 = self, Player2 = computer 
 	def gameLoop(self,event):
+		while True:
+			self.turn = 1
+			self.invalid_pos = True
+			### Place stone #############################
+			### FIX ME TO NOT LET CLICK THE SAME PLACE #################
 
-		self.turn = 1
+			for i in range(ROWS): 
+				for j in range(COLS): 
+					pixel_x = (i + 1) * 40
+					pixel_y = (j + 1) * 40
+					square_distance = math.pow((event.x - pixel_x), 2) + math.pow((event.y - pixel_y), 2)
+					square_distance = math.sqrt(square_distance)
 
-		### Place stone #############################
-		### FIX ME TO NOT LET CLICK THE SAME PLACE #################
-		for i in range(ROWS): 
-			for j in range(COLS): 
-				pixel_x = (i + 1) * 40
-				pixel_y = (j + 1) * 40
-				square_distance = math.pow((event.x - pixel_x), 2) + math.pow((event.y - pixel_y), 2)
-				square_distance = math.sqrt(square_distance)
+					if (square_distance < 20) and (self.board_points[i][j] == 0):
+						self.draw_stone(i,j)
+						# self.player_pos.append((i,j))
+						# unbind to ensure the user cannot click anywhere until the program
+						# has placed a white stone already
+						self.canvas.unbind("<Button-1>")
+						# Place a black stone after determining the position
+						self.board_points[i][j] = 1
+						# print(i,j)
+						self.invalid_pos = False
+						self.board.placeEnemy(i,j)
+						# self.board.printBoard()
+						break
+				else:
+					continue
 
-				if (square_distance < 20) and (self.board_points[i][j] == 0):
-					self.draw_stone(i,j)
-					# self.player_pos.append((i,j))
-					# unbind to ensure the user cannot click anywhere until the program
-					# has placed a white stone already
-					self.canvas.unbind("<Button-1>")
-					# Place a black stone after determining the position
-					self.board_points[i][j] = 1
-					# print(i,j)
+				break
 
-					self.board.placeEnemy(i,j)
-					self.board.printBoard()
-					break
+			if self.invalid_pos:
+				print("Invalid")
+				break
 			else:
-				continue
-
-			break
-			
+				break				
 
 		### Every time after one move, check the board
 		self.result = self.check_result()
@@ -305,7 +398,7 @@ class Gomoku():
 			self.draw_stone(row,col)
 			self.board.placeSelf(row,col)
 		##########################################
-		self.board.printBoard()
+		# self.board.printBoard()
 	
 		### Every time after one move, check the board
 		self.result = self.check_result()
@@ -375,7 +468,7 @@ class Gomoku():
 						continue
 				break
 	
-			self.board.printBoard()
+			# self.board.printBoard()
 		
 			### Every time after one move, check the board
 			self.result = self.check_result()
@@ -399,7 +492,7 @@ class Gomoku():
 			self.firstmove()
 			self.white_turn = 1
 		else:
-			row, col = self.board.newBestMove()
+			row, col = self.board.newBestMove()	
 			self.board_points[row][col] = 1		
 			self.draw_stone(row,col)
 			self.board.placeSelf(row,col)
@@ -432,3 +525,4 @@ if __name__ == "__main__":
 	game = Tk()
 	gomoku = Gomoku(game)
 	game.mainloop()
+
