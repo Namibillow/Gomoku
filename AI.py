@@ -1,6 +1,5 @@
 import random
 
-
 class FirstLevelNode:
     def __init__(self,data=1, row=0, column=0):
         self.connections = []
@@ -30,10 +29,11 @@ class SecondLevelNode:
         ### Open Three
         if numInARowCount == 3 and numInARow[0].AIData == 1 and numInARow[4].AIData == 1:
             return 5000
+
         ### Connect 4 
-        if numInARowCount == 4:
+        if numInARowCount == 4 and output != 0:
             return 100000
-        
+
         return output * numInARowCount
 
     def getEnemyScore(self):
@@ -50,11 +50,13 @@ class SecondLevelNode:
         ### Have higher score than getAIScore open three since AI needs to defense opponent
         if numInARowCount == 3 and numInARow[0].enemyData == 1 and numInARow[4].enemyData == 1:
             return 8000
+
+        # if  numInARowCount == 4 and numInARow[2].enemyData  == 1:
+        #     return 5000
         
-        if numInARowCount == 4:
-            return 10000
-        # if numInARow == 0:
-        #     return output
+        if numInARowCount == 4 and output != 0:
+            return 100000
+
         return output * numInARowCount
 
 class ThirdLevelNode:
@@ -138,7 +140,7 @@ class Board:
     def generateNetworks(self):
         """
         Creates a tree kind of network where 
-        - First Level 
+        - First Level : Contains Score 
 
         - Second Level contains 1020 nodes (# of the possible win combinations )
                        Each node points to 5 of the First Level nodes
