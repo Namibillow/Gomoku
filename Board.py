@@ -1,15 +1,15 @@
 from tkinter import *
-import numpy as np 
+import numpy as np
 import math
-from random import randint 
+from random import randint
 import time
 
 # import Eval_Func as AI
-import best_move as BM 
- 
+import AI as BM
+
 ###	Gomoku utilizing Monte Carlo Tree Search (MCTS) + Alpha Beta Pruning
 ### 盤面サイズ 19 * 19
-ROWS = 19 
+ROWS = 19
 COLS = 19
 
 # EMPTY = 0 ### 盤面にある石 なし
@@ -33,7 +33,7 @@ ALL_POS_COUNT = 361
 
 class Gomoku():
 	def __init__(self, root):
-		
+
 		self.root = root
 		self.root.title("Gomoku game")
 
@@ -49,7 +49,7 @@ class Gomoku():
 
 		self.create_menu()
 
-		self.white_turn = 0 
+		self.white_turn = 0
 		self.blacks_turn = 0
 
 
@@ -62,7 +62,7 @@ class Gomoku():
 
 		##########
 
-	### メニュー Menu 
+	### メニュー Menu
 	def create_menu(self):
 		self.menubar = Menu(self.root)
 		self.subMenu = Menu(self.menubar, tearoff=0)
@@ -72,18 +72,18 @@ class Gomoku():
 		self.subMenu.add_command(label="AI vs AI", command= lambda: self.initBoard('computer', 'computer'))
 		self.subMenu.add_separator()
 		self.subMenu.add_command(label="Exit", command=self.root.quit)
-	
+
 		### メニューの表示
 		self.root.config(menu=self.menubar)
-	
 
-	### 盤面初期化 initializing the game board 
+
+	### 盤面初期化 initializing the game board
 	def initBoard(self, player_one, player_two):
 		self.setPlayer(player_one, player_two)
 
 		self.canvas = Canvas(self.frame, width=800, height=800, bg="bisque", highlightthickness=0)
 		self.canvas.pack()
-	
+
 		self.init_board_points()
 		self.init_board_canvas()
 
@@ -99,13 +99,13 @@ class Gomoku():
 			self.first_time_clicked = True
 			# self.gameLoop2()
 
-		
-			
+
+
 
 	### プレイヤーの設定: {player|computer : BLACK|WHITE}
 	def setPlayer(self, p1, p2):
-		self.player_one = p1 
-		self.player_two = p2 
+		self.player_one = p1
+		self.player_two = p2
 
 
 	def init_board_points(self):
@@ -113,9 +113,9 @@ class Gomoku():
 		### Create 2D lists where [][] = 0 (empty), 1(Black), 2(white)
 		self.board_points = [[0 for i in range(ROWS)] for j in range(COLS)]
 
-		### Other module get initialized 
+		### Other module get initialized
 		# self.ef = AI.Evaluation(self.board_points)
-		
+
 	def init_board_canvas(self):
 		### Vertical line
 		for i in range(ROWS):
@@ -124,7 +124,7 @@ class Gomoku():
 			end_pixel_x = (i + 1) * 40
 			end_pixel_y = (18 + 1) * 40
 			self.canvas.create_line(start_pixel_x, start_pixel_y, end_pixel_x, end_pixel_y)
-			
+
 		### Horizontal line
 		for j in range(COLS):
 			start_pixel_x = (0 + 1) * 40
@@ -132,16 +132,16 @@ class Gomoku():
 			end_pixel_x = (18 + 1) * 40
 			end_pixel_y = (j + 1) * 40
 			self.canvas.create_line(start_pixel_x, start_pixel_y, end_pixel_x, end_pixel_y)
-			
+
 		### Dots to place intersections
-		for i in range(ROWS):  
+		for i in range(ROWS):
 			for j in range(COLS):
 				start_pixel_x = (i + 1) * 40 - 2
 				start_pixel_y = (j + 1) * 40 - 2
 				end_pixel_x = (i + 1) * 40 + 2
 				end_pixel_y = (j + 1) * 40 + 2
 				self.canvas.create_oval(start_pixel_x, start_pixel_y, end_pixel_x, end_pixel_y)
-				
+
 
 	### Draw a stone on a given intersection
 	### Specify the color of the stone depending on the turn.
@@ -154,14 +154,14 @@ class Gomoku():
 
 		if self.turn == 1: ### 黒石
 			self.canvas.create_oval(start_pixel_x, start_pixel_y, end_pixel_x, end_pixel_y, fill='black')
-			
+
 		elif self.turn == 2: ### 白石
 			self.canvas.create_oval(start_pixel_x, start_pixel_y, end_pixel_x, end_pixel_y, fill='white')
-	
+
 ######################################################
 	def check_row(self,x,y): # 右の確認
 		if self.board_points[x][y] == 1 and self.board_points[x+1][y] == 1 and self.board_points[x+2][y] == 1 and self.board_points[x+3][y] == 1 and self.board_points[x+4][y] == 1:
-			return 1 
+			return 1
 
 		elif self.board_points[x][y] == 2 and self.board_points[x+1][y] == 2 and self.board_points[x+2][y] == 2 and self.board_points[x+3][y] == 2 and self.board_points[x+4][y] == 2:
 			return 2
@@ -169,9 +169,9 @@ class Gomoku():
 		else:
 			return 0
 
-	def check_col(self,x,y):	
+	def check_col(self,x,y):
 		if self.board_points[x][y] == 1 and self.board_points[x][y+1] == 1 and self.board_points[x][y+2] == 1 and self.board_points[x][y+3] == 1 and self.board_points[x][y+4] == 1:
-			return 1 
+			return 1
 
 		elif self.board_points[x][y] == 2 and self.board_points[x][y+1] == 2 and self.board_points[x][y+2] == 2 and self.board_points[x][y+3] == 2 and self.board_points[x][y+4] == 2:
 			return 2
@@ -181,7 +181,7 @@ class Gomoku():
 
 	def check_up(self,x,y):
 		if self.board_points[x][y] == 1 and self.board_points[x+1][y+1] == 1 and self.board_points[x+2][y+2] == 1 and self.board_points[x+3][y+3] == 1 and self.board_points[x+4][y+4] == 1:
-			return 1 
+			return 1
 
 		elif self.board_points[x][y] == 2 and self.board_points[x+1][y+1] == 2 and self.board_points[x+2][y+2] == 2 and self.board_points[x+3][y+3] == 2 and self.board_points[x+4][y+4] == 2:
 			return 2
@@ -189,17 +189,17 @@ class Gomoku():
 		else:
 			return 0
 
-	def check_down(self,x,y):	
+	def check_down(self,x,y):
 		if self.board_points[x][y] == 1 and self.board_points[x+1][y-1] == 1 and self.board_points[x+2][y-2] == 1 and self.board_points[x+3][y-3] == 1 and self.board_points[x+4][y-4] == 1:
-			return 1 
+			return 1
 
 		elif self.board_points[x][y] == 2 and self.board_points[x+1][y-1] == 2 and self.board_points[x+2][y-2] == 2 and self.board_points[x+3][y-3] == 2 and self.board_points[x+4][y-4] == 2:
 			return 2
 
 		else:
 			return 0
-######################################################	
-	
+######################################################
+
 	### 四方向（縦、横、斜め上下）の確認
 	def check_result(self):
 		result = 0
@@ -211,8 +211,8 @@ class Gomoku():
 
 				result = self.check_row(i,j)
 				if result != 0:
-					
-					return result 
+
+					return result
 
 		for i in range(ROWS):
 			for j in range(COLS-4):
@@ -254,9 +254,9 @@ class Gomoku():
 	def gameLoop3(self,event):
 		print("Called")
 
-		### AI first 
+		### AI first
 
-		self.turn = 1 
+		self.turn = 1
 
 		if self.blacks_turn == 0:
 			while True:
@@ -271,11 +271,11 @@ class Gomoku():
 						self.board_points[middleRow][middleCol] = 2
 					else:
 						self.board_points[middleRow][middleCol] = 1
-					break 
+					break
 			self.blacks_turn = 1
 		else:
-			row, col = self.board.newBestMove()	
-			self.board_points[row][col] = 1		
+			row, col = self.board.newBestMove()
+			self.board_points[row][col] = 1
 			self.draw_stone(row,col)
 			self.board.placeEnemy(row,col)
 
@@ -284,18 +284,18 @@ class Gomoku():
 
 		### Every time after one move, check the board
 		self.result = self.check_result()
-		
 
-		### Black wins 
+
+		### Black wins
 		if self.result == 1:
 			self.canvas.create_text(400,20, font=("Purisa", 25), text="Black Wins")
-			
+
 			return 0
 
 		### Check if the game is tie
 		elif self.check_tie() == False:
 			self.canvas.create_text(400,20, font=("Purisa", 25), text="GAME TIE")
-			
+
 			return 0
 
 		self.turn = 2
@@ -306,17 +306,17 @@ class Gomoku():
 			self.white_turn = 1
 
 		else:
-			row, col = self.board.newBestMove()	
-			self.board_points[row][col] = 2			
+			row, col = self.board.newBestMove()
+			self.board_points[row][col] = 2
 			self.draw_stone(row,col)
 			self.board.placeSelf(row,col)
 		##########################################
 		# self.board.printBoard()
-	
+
 		### Every time after one move, check the board
 		self.result = self.check_result()
 
-		### White wins 
+		### White wins
 		if self.result == 2:
 			self.canvas.create_text(400,20, font=("Purisa", 25), text="White Wins")
 			self.canvas.unbind('<Button-1>')
@@ -326,11 +326,11 @@ class Gomoku():
 			self.canvas.create_text(400,20, font=("Purisa", 25), text="GAME TIE")
 			self.canvas.unbind('<Button-1>')
 			return 0
-		
+
 		#self.canvas.bind("<Button-1>",self.gameLoop3)
 
 
-	### Player1 = self, Player2 = computer 
+	### Player1 = self, Player2 = computer
 	def gameLoop(self,event):
 		while True:
 			self.turn = 1
@@ -338,8 +338,8 @@ class Gomoku():
 			### Place stone #############################
 			### FIX ME TO NOT LET CLICK THE SAME PLACE #################
 
-			for i in range(ROWS): 
-				for j in range(COLS): 
+			for i in range(ROWS):
+				for j in range(COLS):
 					pixel_x = (i + 1) * 40
 					pixel_y = (j + 1) * 40
 					square_distance = math.pow((event.x - pixel_x), 2) + math.pow((event.y - pixel_y), 2)
@@ -367,12 +367,12 @@ class Gomoku():
 				print("Invalid")
 				break
 			else:
-				break				
+				break
 
 		### Every time after one move, check the board
 		self.result = self.check_result()
 
-		### Black wins 
+		### Black wins
 		if self.result == 1:
 			self.canvas.create_text(400,20, font=("Purisa", 25), text="Black Wins")
 			self.canvas.unbind('<Button-1>')
@@ -393,17 +393,17 @@ class Gomoku():
 
 
 		else:
-			row, col = self.board.newBestMove()	
-			self.board_points[row][col] = 2			
+			row, col = self.board.newBestMove()
+			self.board_points[row][col] = 2
 			self.draw_stone(row,col)
 			self.board.placeSelf(row,col)
 		##########################################
 		# self.board.printBoard()
-	
+
 		### Every time after one move, check the board
 		self.result = self.check_result()
 
-		### White wins 
+		### White wins
 		if self.result == 2:
 			self.canvas.create_text(400,20, font=("Purisa", 25), text="White Wins")
 			self.canvas.unbind('<Button-1>')
@@ -419,7 +419,7 @@ class Gomoku():
 
 
 
-	### For the first turn of AI, it should put somewhere in middle 
+	### For the first turn of AI, it should put somewhere in middle
 	def firstmove(self):
 		while True:
 			middleRow = randint(8,11)
@@ -433,8 +433,8 @@ class Gomoku():
 					self.board_points[middleRow][middleCol] = 2
 				else:
 					self.board_points[middleRow][middleCol] = 1
-				return 
-		
+				return
+
 
 	### Player1 = Computer, Player2 = self
 	def gameLoop2(self,event):
@@ -445,8 +445,8 @@ class Gomoku():
 			pass
 		else:
 		### Place stone #################################
-			for i in range(ROWS): 
-				for j in range(COLS): 
+			for i in range(ROWS):
+				for j in range(COLS):
 					pixel_x = (i + 1) * 40
 					pixel_y = (j + 1) * 40
 
@@ -467,13 +467,13 @@ class Gomoku():
 				else:
 						continue
 				break
-	
+
 			# self.board.printBoard()
-		
+
 			### Every time after one move, check the board
 			self.result = self.check_result()
 
-			### White wins 
+			### White wins
 			if self.result == 2:
 				self.canvas.create_text(400,20, font=("Purisa", 25), text="White Wins")
 				self.canvas.unbind('<Button-1>')
@@ -484,16 +484,16 @@ class Gomoku():
 				self.canvas.unbind('<Button-1>')
 				return 0
 
-			
-		### AI first 
-		self.turn = 1 
+
+		### AI first
+		self.turn = 1
 
 		if self.white_turn == 0:
 			self.firstmove()
 			self.white_turn = 1
 		else:
-			row, col = self.board.newBestMove()	
-			self.board_points[row][col] = 1		
+			row, col = self.board.newBestMove()
+			self.board_points[row][col] = 1
 			self.draw_stone(row,col)
 			self.board.placeSelf(row,col)
 
@@ -503,7 +503,7 @@ class Gomoku():
 		### Every time after one move, check the board
 		self.result = self.check_result()
 
-		### Black wins 
+		### Black wins
 		if self.result == 1:
 			self.canvas.create_text(400,20, font=("Purisa", 25), text="Black Wins")
 			self.canvas.unbind('<Button-1>')
@@ -516,7 +516,7 @@ class Gomoku():
 			return 0
 
 		self.canvas.bind("<Button-1>",self.gameLoop2)
-		
+
 
 
 
